@@ -81,30 +81,27 @@ function renderLogo() {
 // --- EDIT LOGIC ---
 async function editInvoice(id) {
     try {
-        const res = await fetch(`${API_URL}/invoices`);
-        const all = await res.json();
-        const inv = all.find(i => i._id === id);
+        const res = await fetch(`${API_URL}/invoices/${id}`);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const inv = await res.json();
 
-        if (!inv) return alert("Invoice not found!");
+        if (!inv || !inv._id) return alert("Invoice not found!");
 
         currentEditId = id;
         document.getElementById('invoice-page-title').innerText = "Edit Invoice: " + inv.invoiceNo;
         document.getElementById('save-btn').innerText = "🆙 Update Invoice";
 
-        // Load Details
         document.getElementById('inv-no').innerText = inv.invoiceNo;
         document.getElementById('cur-date').innerText = inv.date;
         document.getElementById('client-name').innerText = inv.client.name;
         document.getElementById('client-addr').innerText = inv.client.address;
         document.getElementById('client-gst').innerText = inv.client.gstin;
 
-        // Load Items
         const rows = document.getElementById('rows');
         rows.innerHTML = "";
         inv.items.forEach(item => {
-            const descriptionParts = (item.description || "").split('\n');
-            const productName = item.name || descriptionParts.shift() || "";
-            const productDescription = item.details || descriptionParts.join('\n') || "";
+            const productName = item.name || (item.description || "").split('\n')[0] || "";
+            const productDescription = item.details || "";
             const tr = document.createElement('tr');
             tr.innerHTML = `
                 <td>
@@ -117,7 +114,7 @@ async function editInvoice(id) {
                 <td><input type="number" class="qty" value="${item.qty}" oninput="calculate()"></td>
                 <td><input type="number" class="rate" value="${item.price}" oninput="calculate()"></td>
                 <td><input type="number" class="gst" value="${item.gst}" oninput="calculate()"></td>
-                <td class="row-total">₹ ${item.total.toFixed(2)}</td>
+                <td class="row-total">₹ ${(item.total || 0).toFixed(2)}</td>
                 <td class="no-print"><button onclick="this.closest('tr').remove(); calculate();" style="color:red; background:none; border:none; cursor:pointer;">&times;</button></td>
             `;
             rows.appendChild(tr);
@@ -125,7 +122,10 @@ async function editInvoice(id) {
 
         calculate();
         showSection('new');
-    } catch (e) { alert("Error loading invoice"); }
+    } catch (e) {
+        console.error('editInvoice error:', e);
+        alert("Error loading invoice: " + e.message);
+    }
 }
 
 // --- CALCULATION ---
@@ -311,28 +311,26 @@ function generateQR() {
     const div = document.getElementById('qrcode');
     div.innerHTML = "";
 
-    window.userUPI = DEFAULT_UPI_ID;
     const qrText = `upi://pay?pa=${DEFAULT_UPI_ID}&pn=${encodeURIComponent(DEFAULT_UPI_NAME)}&cu=INR`;
 
-    const canvas = document.createElement('canvas');
-    div.appendChild(canvas);
-
-    // QRCode.toCanvas is from the qrcode npm package (jsdelivr build)
-    QRCode.toCanvas(canvas, qrText, {
-        width: 96,
-        margin: 1,
-        color: { dark: '#000000', light: '#ffffff' }
-    }, function (err) {
-        if (err) {
-            // Fallback: external API image
-            div.innerHTML = '';
-            const img = document.createElement('img');
-            img.src = `https://api.qrserver.com/v1/create-qr-code/?size=96x96&margin=6&data=${encodeURIComponent(qrText)}`;
-            img.width = 96;
-            img.height = 96;
-            div.appendChild(img);
-        }
-    });
+    try {
+        new QRCode(div, {
+            text: qrText,
+            width: 96,
+            height: 96,
+            colorDark: "#000000",
+            colorLight: "#ffffff",
+            correctLevel: QRCode.CorrectLevel.M
+        });
+        // qrcodejs renders a canvas (visible) + an img (hidden by default) — canvas is what we show
+    } catch (e) {
+        console.error('QR generation failed:', e);
+        const img = document.createElement('img');
+        img.src = `https://api.qrserver.com/v1/create-qr-code/?size=96x96&margin=6&data=${encodeURIComponent(qrText)}`;
+        img.width = 96;
+        img.height = 96;
+        div.appendChild(img);
+    }
 }
 
 async function fetchCRM() {
@@ -419,10 +417,11 @@ function toggleProforma() {
     document.getElementById('inv-label').innerText = document.getElementById('invoice-mode').value.toUpperCase();
 }
 
-// Initialize chat history on page load
+// Initialize chat history on page load — skip if AI route not available
 window.addEventListener('DOMContentLoaded', async () => {
     try {
         const res = await fetch(`${API_URL}/ai/history/last`);
+        if (!res.ok) return; // AI route not deployed, skip silently
         const data = await res.json();
         if (data) {
             currentChatId = data._id;
