@@ -302,7 +302,12 @@ function generateQR() {
 
     window.userUPI = DEFAULT_UPI_ID;
     const qrText = `upi://pay?pa=${DEFAULT_UPI_ID}&pn=${encodeURIComponent(DEFAULT_UPI_NAME)}&cu=INR`;
-    new QRCode(div, { text: qrText, width: 96, height: 96 });
+    const img = document.createElement('img');
+    img.src = `https://api.qrserver.com/v1/create-qr-code/?size=96x96&margin=6&data=${encodeURIComponent(qrText)}`;
+    img.alt = "UPI payment QR";
+    img.width = 96;
+    img.height = 96;
+    div.appendChild(img);
 }
 
 async function fetchCRM() {
