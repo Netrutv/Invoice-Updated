@@ -21,7 +21,7 @@ window.onload = async () => {
 async function showSection(sectionId) {
     document.querySelectorAll('.page-section').forEach(sec => sec.style.display = 'none');
     document.querySelectorAll('.nav-item').forEach(nav => nav.classList.remove('active'));
-    
+
     const target = document.getElementById(sectionId + '-section');
     if (target) {
         target.style.display = 'block';
@@ -38,13 +38,13 @@ function handleSignatureUpload(event) {
     const file = event.target.files[0];
     if (file) {
         const reader = new FileReader();
-        reader.onload = function(e) {
+        reader.onload = function (e) {
             signatureBase64 = e.target.result;
-            
+
             // Inject the image directly into the preview box with strict CSS for the PDF engine
-            document.getElementById('signature-preview').innerHTML = 
+            document.getElementById('signature-preview').innerHTML =
                 `<img src="${signatureBase64}" alt="Signature" style="height: 50px; width: auto; display: block; margin-bottom: 5px;">`;
-                
+
             console.log("Signature loaded successfully!");
         };
         reader.readAsDataURL(file);
@@ -56,7 +56,7 @@ function handleLogoUpload(event) {
     if (!file) return;
 
     const reader = new FileReader();
-    reader.onload = function(e) {
+    reader.onload = function (e) {
         logoBase64 = e.target.result;
         localStorage.setItem('quickbill_logo', logoBase64);
         renderLogo();
@@ -83,13 +83,13 @@ async function editInvoice(id) {
         const res = await fetch(`${API_URL}/invoices`);
         const all = await res.json();
         const inv = all.find(i => i._id === id);
-        
+
         if (!inv) return alert("Invoice not found!");
 
         currentEditId = id;
         document.getElementById('invoice-page-title').innerText = "Edit Invoice: " + inv.invoiceNo;
         document.getElementById('save-btn').innerText = "🆙 Update Invoice";
-        
+
         // Load Details
         document.getElementById('inv-no').innerText = inv.invoiceNo;
         document.getElementById('cur-date').innerText = inv.date;
@@ -190,8 +190,8 @@ async function resetForm() {
 async function saveToDB() {
     const cleanNum = (s) => parseFloat(s.replace(/[^\d.-]/g, '')) || 0;
     const clientName = document.getElementById('client-name').innerText.trim();
-    
-    if(clientName === "" || clientName === "Client Name") return alert("Please type a Client Name!");
+
+    if (clientName === "" || clientName === "Client Name") return alert("Please type a Client Name!");
 
     const invoiceData = {
         invoiceNo: document.getElementById('inv-no').innerText,
@@ -225,7 +225,7 @@ async function saveToDB() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(invoiceData)
         });
-        
+
         if (res.ok) {
             alert(currentEditId ? "✅ Updated!" : "✅ Saved!");
             resetForm();
@@ -302,12 +302,27 @@ function generateQR() {
 
     window.userUPI = DEFAULT_UPI_ID;
     const qrText = `upi://pay?pa=${DEFAULT_UPI_ID}&pn=${encodeURIComponent(DEFAULT_UPI_NAME)}&cu=INR`;
-    const img = document.createElement('img');
-    img.src = `https://api.qrserver.com/v1/create-qr-code/?size=96x96&margin=6&data=${encodeURIComponent(qrText)}`;
-    img.alt = "UPI payment QR";
-    img.width = 96;
-    img.height = 96;
-    div.appendChild(img);
+
+    // Try qrcodejs first (inline, no network needed)
+    if (typeof QRCode !== 'undefined') {
+        new QRCode(div, {
+            text: qrText,
+            width: 96,
+            height: 96,
+            colorDark: "#000000",
+            colorLight: "#ffffff",
+            correctLevel: QRCode.CorrectLevel.M
+        });
+    } else {
+        // Fallback: external API
+        const img = document.createElement('img');
+        img.src = `https://api.qrserver.com/v1/create-qr-code/?size=96x96&margin=6&data=${encodeURIComponent(qrText)}`;
+        img.alt = "UPI payment QR";
+        img.width = 96;
+        img.height = 96;
+        img.crossOrigin = "anonymous";
+        div.appendChild(img);
+    }
 }
 
 async function fetchCRM() {
@@ -322,7 +337,7 @@ async function fetchCRM() {
 
 function fillClientDetails() {
     const c = window.clientData.get(document.getElementById('client-selector').value);
-    if(c) { document.getElementById('client-name').innerText = c.name; document.getElementById('client-addr').innerText = c.address; document.getElementById('client-gst').innerText = c.gstin; }
+    if (c) { document.getElementById('client-name').innerText = c.name; document.getElementById('client-addr').innerText = c.address; document.getElementById('client-gst').innerText = c.gstin; }
 }
 
 async function fetchStats() {
@@ -343,7 +358,7 @@ function updateChart(monthlyData) {
 // --- ENHANCED PDF DOWNLOAD ---
 function downloadPDF() {
     // 1. Clean the UI
-    const style = document.createElement('style'); 
+    const style = document.createElement('style');
     style.id = 'pdf-clean-style';
     style.innerHTML = `
         .no-print { display: none !important; } 
@@ -354,18 +369,18 @@ function downloadPDF() {
         #signature-preview { opacity: 1 !important; visibility: visible !important; }
     `;
     document.head.appendChild(style);
-    
+
     // 2. Set PDF Options
     const opt = {
-        margin: 10, 
+        margin: 10,
         filename: `${document.getElementById('inv-no').innerText.replace('#', '')}.pdf`,
-        image: { type: 'jpeg', quality: 1 }, 
-        html2canvas: { 
-            scale: 2, 
-            useCORS: true, 
+        image: { type: 'jpeg', quality: 1 },
+        html2canvas: {
+            scale: 2,
+            useCORS: true,
             allowTaint: true, // Forces image rendering
             logging: true     // Helps catch render errors
-        }, 
+        },
         jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
     };
 
@@ -375,8 +390,8 @@ function downloadPDF() {
     });
 }
 
-function toggleProforma() { 
-    document.getElementById('inv-label').innerText = document.getElementById('invoice-mode').value.toUpperCase(); 
+function toggleProforma() {
+    document.getElementById('inv-label').innerText = document.getElementById('invoice-mode').value.toUpperCase();
 }
 
 // Initialize chat history on page load
@@ -384,7 +399,7 @@ window.addEventListener('DOMContentLoaded', async () => {
     try {
         const res = await fetch(`${API_URL}/ai/history/last`);
         const data = await res.json();
-        if(data) {
+        if (data) {
             currentChatId = data._id;
             const output = document.getElementById('chat-output');
             output.innerHTML = "";
@@ -397,11 +412,11 @@ async function askERPBot() {
     const queryInput = document.getElementById('user-query');
     const query = queryInput.value.trim();
     const output = document.getElementById('chat-output');
-    
-    if(!query) return;
+
+    if (!query) return;
 
     appendMessage('user', query);
-    queryInput.value = ""; 
+    queryInput.value = "";
 
     const loadingId = 'ai-' + Date.now();
     appendMessage('ai', "⌛ Compiling report...", loadingId);
@@ -427,10 +442,10 @@ async function askERPBot() {
         // CHECK FOR PDF TRIGGER
         if (answer.includes("[GENERATE_PDF]")) {
             answer = answer.replace("[GENERATE_PDF]", "").trim();
-            
+
             // Decide which PDF to generate based on query
-            if (query.toLowerCase().includes("month") || 
-                query.toLowerCase().includes("sales") || 
+            if (query.toLowerCase().includes("month") ||
+                query.toLowerCase().includes("sales") ||
                 query.toLowerCase().includes("report") ||
                 query.toLowerCase().includes("summary")) {
                 generateSummaryPDF(answer, allInvoices);
@@ -440,7 +455,7 @@ async function askERPBot() {
         }
 
         document.getElementById(loadingId).innerText = answer;
-        
+
     } catch (e) {
         console.error(e);
         document.getElementById(loadingId).innerText = `❌ Error: ${e.message}`;
@@ -451,12 +466,12 @@ async function askERPBot() {
 function generateSummaryPDF(reportText, invoiceData) {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
-    
+
     // --- 1. CLEAN THE TEXT FIRST ---
     // Remove stars (**), remove the trigger tag, and replace the Rupee symbol
     let cleanText = reportText
-        .replace(/\*\*/g, '') 
-        .replace(/₹/g, 'Rs. ') 
+        .replace(/\*\*/g, '')
+        .replace(/₹/g, 'Rs. ')
         .replace(/\[GENERATE_PDF\]/gi, '')
         .trim();
 
@@ -482,13 +497,13 @@ function generateSummaryPDF(reportText, invoiceData) {
     doc.setFont("helvetica", "normal");
     doc.setFontSize(11);
     doc.setTextColor(0, 0, 0);
-    
+
     // Use splitTextToSize on the CLEANED text
     const splitLines = doc.splitTextToSize(cleanText, contentWidth);
     doc.text(splitLines, margin, yPosition);
-    
+
     // Calculate how much space the text took
-    const textHeight = (splitLines.length * 7); 
+    const textHeight = (splitLines.length * 7);
     yPosition += textHeight + 10;
 
     // --- 4. DATA TABLE ---
@@ -510,12 +525,12 @@ function generateSummaryPDF(reportText, invoiceData) {
         doc.setFont("helvetica", "normal");
         invoiceData.slice(0, 15).forEach(inv => {
             if (yPosition > pageHeight - 20) { doc.addPage(); yPosition = 20; }
-            
+
             doc.text(String(inv.date), margin + 2, yPosition);
             doc.text(String(inv.client.name).substring(0, 25), margin + 40, yPosition);
             // Use Rs. instead of ₹ symbol here too
             doc.text(`Rs. ${inv.grandTotal.toLocaleString()}`, margin + 130, yPosition);
-            
+
             yPosition += 7;
         });
     }
@@ -533,15 +548,15 @@ function appendMessage(role, text, id = null) {
     const msgDiv = document.createElement('div');
     msgDiv.id = id || '';
     msgDiv.className = `msg ${role === 'user' ? 'user-msg' : 'ai-msg'}`;
-    
+
     // Replace newlines with <br> and handle simple Markdown-style bolding
     // Alternatively, use: msgDiv.innerHTML = marked.parse(text); 
     let formattedText = text
         .replace(/\n/g, '<br>')
-        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>'); 
+        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
 
     msgDiv.innerHTML = formattedText;
-    
+
     output.appendChild(msgDiv);
     output.scrollTop = output.scrollHeight;
 }
@@ -554,7 +569,7 @@ function resetChat() {
 function toggleChat() {
     const chatWindow = document.getElementById('chat-widget-window');
     chatWindow.classList.toggle('hidden');
-    
+
     // Optional: Auto-focus the input box when opened
     if (!chatWindow.classList.contains('hidden')) {
         setTimeout(() => {
