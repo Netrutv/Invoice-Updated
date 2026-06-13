@@ -1,4 +1,5 @@
-const API_URL = "https://invoice-bill-k9dn.onrender.com/api";
+// Use relative URL so it works on any domain (localhost, Vercel, etc.)
+const API_URL = "/api";
 const DEFAULT_UPI_ID = "vyapar.175692826517@hdfcbank";
 const DEFAULT_UPI_NAME = "Vyapar";
 let myChart = null;

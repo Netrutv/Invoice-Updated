@@ -2,11 +2,31 @@
     "version": 2,
     "builds": [
         {
+            "src": "api/**/*.js",
+            "use": "@vercel/node"
+        },
+        {
             "src": "public/**",
             "use": "@vercel/static"
         }
     ],
     "routes": [
+        {
+            "src": "/api/invoices/([^/]+)",
+            "dest": "/api/invoices/[id].js"
+        },
+        {
+            "src": "/api/invoices",
+            "dest": "/api/invoices.js"
+        },
+        {
+            "src": "/api/profile",
+            "dest": "/api/profile.js"
+        },
+        {
+            "src": "/api/stats",
+            "dest": "/api/stats.js"
+        },
         {
             "src": "/(.*)",
             "dest": "/public/$1"
