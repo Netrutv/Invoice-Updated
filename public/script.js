@@ -96,6 +96,8 @@ async function editInvoice(id) {
         document.getElementById('client-name').innerText = inv.client.name;
         document.getElementById('client-addr').innerText = inv.client.address;
         document.getElementById('client-gst').innerText = inv.client.gstin;
+        // Restore the status dropdown to whatever is saved in DB
+        document.getElementById('invoice-status').value = inv.status || 'Unpaid';
 
         const rows = document.getElementById('rows');
         rows.innerHTML = "";
@@ -198,6 +200,7 @@ async function saveToDB() {
         invoiceNo: document.getElementById('inv-no').innerText,
         date: document.getElementById('cur-date').innerText,
         businessName: document.getElementById('biz-name').innerText,
+        status: document.getElementById('invoice-status').value,
         client: { name: clientName, address: document.getElementById('client-addr').innerText, gstin: document.getElementById('client-gst').innerText },
         items: Array.from(document.querySelectorAll('#rows tr')).map(row => {
             const productName = row.querySelector('.item-name').value.trim();
@@ -291,15 +294,19 @@ async function fetchHistory() {
             document.getElementById('invoice-list-body').innerHTML = '<tr><td colspan="6" class="empty-state">No invoices found</td></tr>';
             return;
         }
-        document.getElementById('invoice-list-body').innerHTML = data.map(inv => `
+        document.getElementById('invoice-list-body').innerHTML = data.map(inv => {
+            const status = inv.status || 'Unpaid';
+            const pillClass = status === 'Paid' ? 'paid' : status === 'Overdue' ? 'overdue' : 'unpaid';
+            return `
             <tr>
                 <td>${inv.date}</td>
                 <td><strong>${inv.invoiceNo}</strong></td>
                 <td>${inv.client.name}</td>
                 <td>₹ ${inv.grandTotal.toLocaleString()}</td>
-                <td><span class="status-pill">${inv.status || 'Unpaid'}</span></td>
+                <td><span class="status-pill ${pillClass}">${status}</span></td>
                 <td><button class="btn btn-outline" onclick="editInvoice('${inv._id}')">✏️ Edit</button></td>
-            </tr>`).join('');
+            </tr>`;
+        }).join('');
     } catch (e) {
         console.error('fetchHistory error:', e);
         document.getElementById('invoice-list-body').innerHTML = `<tr><td colspan="6" class="empty-state">⚠️ Could not load invoices: ${e.message}</td></tr>`;
