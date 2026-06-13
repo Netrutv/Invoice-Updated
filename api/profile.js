@@ -5,21 +5,18 @@ module.exports = async (req, res) => {
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+
     if (req.method === 'OPTIONS') return res.status(200).end();
 
-    await connectDB();
+    try {
+        await connectDB();
 
-    if (req.method === 'GET') {
-        try {
+        if (req.method === 'GET') {
             const profile = await Profile.findOne({ profileType: 'main_profile' });
             return res.status(200).json(profile || {});
-        } catch (err) {
-            return res.status(500).json({ message: err.message });
         }
-    }
 
-    if (req.method === 'POST') {
-        try {
+        if (req.method === 'POST') {
             const { name, address, gstin, upi } = req.body;
             const profile = await Profile.findOneAndUpdate(
                 { profileType: 'main_profile' },
@@ -27,10 +24,12 @@ module.exports = async (req, res) => {
                 { upsert: true, new: true }
             );
             return res.status(200).json(profile);
-        } catch (err) {
-            return res.status(500).json({ message: err.message });
         }
-    }
 
-    res.status(405).json({ message: 'Method not allowed' });
+        return res.status(405).json({ message: 'Method not allowed' });
+
+    } catch (err) {
+        console.error('[/api/profile] Error:', err.message);
+        return res.status(500).json({ message: err.message });
+    }
 };

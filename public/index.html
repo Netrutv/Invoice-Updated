@@ -15,7 +15,8 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <!-- QR code: use the canvas-only build which renders reliably on all browsers -->
+    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.4/build/qrcode.min.js"></script>
 </head>
 
 <body>
@@ -79,7 +80,8 @@
         </div>
 
         <div id="new-section" class="page-section">
-            <header class="section-header no-print" style="display: flex; justify-content: space-between; align-items: center;">
+            <header class="section-header no-print"
+                style="display: flex; justify-content: space-between; align-items: center;">
                 <div class="invoice-controls">
                     <h2 id="invoice-page-title">Create New Invoice</h2>
                     <div style="display: flex; gap: 10px; margin-top: 10px;">
@@ -88,7 +90,8 @@
                             <option value="Proforma Invoice">Proforma Invoice</option>
                             <option value="Receipt">Receipt</option>
                         </select>
-                        <select id="invoice-status" class="custom-select" style="border-color: #ef4444; color: #ef4444; background-color: #fef2f2; font-weight: 600;">
+                        <select id="invoice-status" class="custom-select"
+                            style="border-color: #ef4444; color: #ef4444; background-color: #fef2f2; font-weight: 600;">
                             <option value="Unpaid">🔴 Unpaid</option>
                             <option value="Paid">🟢 Paid</option>
                             <option value="Overdue">⚠️ Overdue</option>
@@ -104,22 +107,26 @@
 
             <div class="invoice-container" id="bill-area">
                 <div class="invoice-accent-bar"></div>
-                
+
                 <div class="inv-header">
                     <div class="biz-info">
                         <h1 contenteditable="true" id="biz-name" class="editable-field">BUSINESS NAME</h1>
-                        <p contenteditable="true" id="biz-addr" class="editable-field">Your Address Line 1, City, PIN</p>
-                        <p>GSTIN: <span contenteditable="true" id="biz-gst" class="editable-field">27AAAAA0000A1Z5</span></p>
+                        <p contenteditable="true" id="biz-addr" class="editable-field">Your Address Line 1, City, PIN
+                        </p>
+                        <p>GSTIN: <span contenteditable="true" id="biz-gst"
+                                class="editable-field">27AAAAA0000A1Z5</span></p>
                     </div>
                     <div class="inv-meta">
                         <div class="invoice-logo-slot">
                             <div id="invoice-logo-preview" class="invoice-logo-preview"></div>
                             <label class="logo-upload-label no-print" for="logo-upload">Upload Logo</label>
-                            <input type="file" id="logo-upload" class="no-print logo-input" accept="image/png, image/jpeg, image/webp" onchange="handleLogoUpload(event)">
+                            <input type="file" id="logo-upload" class="no-print logo-input"
+                                accept="image/png, image/jpeg, image/webp" onchange="handleLogoUpload(event)">
                         </div>
                         <h1 id="inv-label">TAX INVOICE</h1>
                         <div class="meta-details">
-                            <p>No: <strong contenteditable="true" id="inv-no" class="editable-field">#INV-1001</strong></p>
+                            <p>No: <strong contenteditable="true" id="inv-no" class="editable-field">#INV-1001</strong>
+                            </p>
                             <p>Date: <strong id="cur-date" contenteditable="true" class="editable-field"></strong></p>
                         </div>
                     </div>
@@ -128,15 +135,21 @@
                 <div class="grid-2">
                     <div class="bill-to-box">
                         <span class="label">Billed To</span>
-                        <select id="client-selector" class="no-print custom-select" onchange="fillClientDetails()" style="margin-bottom: 12px; max-width: 250px;">
+                        <select id="client-selector" class="no-print custom-select" onchange="fillClientDetails()"
+                            style="margin-bottom: 12px; max-width: 250px;">
                             <option value="">-- Quick Select Client --</option>
                         </select>
                         <div class="client-details-card">
                             <h3 contenteditable="true" id="client-name" class="editable-field">Client Name</h3>
-                            <p contenteditable="true" id="client-addr" class="editable-field text-muted">Client Address Details...</p>
+                            <p contenteditable="true" id="client-addr" class="editable-field text-muted">Client Address
+                                Details...</p>
                             <div style="margin-top: 8px;">
-                                <p class="text-muted">GSTIN: <span contenteditable="true" id="client-gst" class="editable-field" style="color: var(--text-main); font-weight: 500;">00XXXXX0000X0Z0</span></p>
-                                <p class="text-muted">Email: <span contenteditable="true" id="client-email" class="editable-field" style="color: var(--text-main); font-weight: 500;">client@email.com</span></p>
+                                <p class="text-muted">GSTIN: <span contenteditable="true" id="client-gst"
+                                        class="editable-field"
+                                        style="color: var(--text-main); font-weight: 500;">00XXXXX0000X0Z0</span></p>
+                                <p class="text-muted">Email: <span contenteditable="true" id="client-email"
+                                        class="editable-field"
+                                        style="color: var(--text-main); font-weight: 500;">client@email.com</span></p>
                             </div>
                         </div>
                     </div>
@@ -162,7 +175,7 @@
                             </tr>
                         </thead>
                         <tbody id="rows">
-                            </tbody>
+                        </tbody>
                     </table>
                 </div>
                 <button class="btn btn-add no-print" onclick="addNewRow()">+ Add Line Item</button>
@@ -171,7 +184,8 @@
                     <div class="invoice-terms-col">
                         <div class="note-section">
                             <span class="label">Notes / Bank Details</span>
-                            <p contenteditable="true" id="notes-content" class="editable-field text-muted">Bank: HDFC<br>A/C: 50100XXXXXXX<br>IFSC: HDFC0000001</p>
+                            <p contenteditable="true" id="notes-content" class="editable-field text-muted">Bank:
+                                HDFC<br>A/C: 50100XXXXXXX<br>IFSC: HDFC0000001</p>
                         </div>
 
                         <div class="note-section">
@@ -187,20 +201,24 @@
 
                     <div class="invoice-totals-col">
                         <div class="totals-area">
-                            <div class="t-row"><span class="text-muted">Sub-Total</span><span id="sub-total" class="font-medium">₹ 0.00</span></div>
-                            <div class="t-row"><span class="text-muted">Tax Total (GST)</span><span id="tax-total" class="font-medium">₹ 0.00</span></div>
+                            <div class="t-row"><span class="text-muted">Sub-Total</span><span id="sub-total"
+                                    class="font-medium">₹ 0.00</span></div>
+                            <div class="t-row"><span class="text-muted">Tax Total (GST)</span><span id="tax-total"
+                                    class="font-medium">₹ 0.00</span></div>
                             <div class="divider"></div>
-                            <div class="t-row grand"><span>Grand Total</span><span id="grand-total" class="text-primary">₹ 0.00</span></div>
+                            <div class="t-row grand"><span>Grand Total</span><span id="grand-total"
+                                    class="text-primary">₹ 0.00</span></div>
                         </div>
 
                         <div class="signature-box">
                             <div id="signature-preview" class="sig-preview-container"></div>
                             <div class="sig-line">Authorized Signature</div>
-                            <input type="file" id="sig-upload" class="no-print custom-select sig-input" accept="image/png, image/jpeg" onchange="handleSignatureUpload(event)">
+                            <input type="file" id="sig-upload" class="no-print custom-select sig-input"
+                                accept="image/png, image/jpeg" onchange="handleSignatureUpload(event)">
                         </div>
                     </div>
                 </div>
-                
+
             </div>
         </div>
 

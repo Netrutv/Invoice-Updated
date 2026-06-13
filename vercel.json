@@ -1,35 +1,22 @@
 {
     "version": 2,
-    "builds": [
+    "outputDirectory": "public",
+    "rewrites": [
         {
-            "src": "api/**/*.js",
-            "use": "@vercel/node"
+            "source": "/api/invoices/:id",
+            "destination": "/api/invoices/[id]"
         },
         {
-            "src": "public/**",
-            "use": "@vercel/static"
-        }
-    ],
-    "routes": [
-        {
-            "src": "/api/invoices/([^/]+)",
-            "dest": "/api/invoices/[id].js"
+            "source": "/api/invoices",
+            "destination": "/api/invoices"
         },
         {
-            "src": "/api/invoices",
-            "dest": "/api/invoices.js"
+            "source": "/api/profile",
+            "destination": "/api/profile"
         },
         {
-            "src": "/api/profile",
-            "dest": "/api/profile.js"
-        },
-        {
-            "src": "/api/stats",
-            "dest": "/api/stats.js"
-        },
-        {
-            "src": "/(.*)",
-            "dest": "/public/$1"
+            "source": "/api/stats",
+            "destination": "/api/stats"
         }
     ]
 }

@@ -283,17 +283,27 @@ function applyProfile(profile) {
 }
 
 async function fetchHistory() {
-    const res = await fetch(`${API_URL}/invoices`);
-    const data = await res.json();
-    document.getElementById('invoice-list-body').innerHTML = data.map(inv => `
-        <tr>
-            <td>${inv.date}</td>
-            <td><strong>${inv.invoiceNo}</strong></td>
-            <td>${inv.client.name}</td>
-            <td>₹ ${inv.grandTotal.toLocaleString()}</td>
-            <td><span class="status-pill">Paid</span></td>
-            <td><button class="btn btn-outline" onclick="editInvoice('${inv._id}')">✏️ Edit</button></td>
-        </tr>`).join('');
+    try {
+        const res = await fetch(`${API_URL}/invoices`);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+        if (!data.length) {
+            document.getElementById('invoice-list-body').innerHTML = '<tr><td colspan="6" class="empty-state">No invoices found</td></tr>';
+            return;
+        }
+        document.getElementById('invoice-list-body').innerHTML = data.map(inv => `
+            <tr>
+                <td>${inv.date}</td>
+                <td><strong>${inv.invoiceNo}</strong></td>
+                <td>${inv.client.name}</td>
+                <td>₹ ${inv.grandTotal.toLocaleString()}</td>
+                <td><span class="status-pill">${inv.status || 'Unpaid'}</span></td>
+                <td><button class="btn btn-outline" onclick="editInvoice('${inv._id}')">✏️ Edit</button></td>
+            </tr>`).join('');
+    } catch (e) {
+        console.error('fetchHistory error:', e);
+        document.getElementById('invoice-list-body').innerHTML = `<tr><td colspan="6" class="empty-state">⚠️ Could not load invoices: ${e.message}</td></tr>`;
+    }
 }
 
 // --- HELPERS ---
@@ -304,36 +314,45 @@ function generateQR() {
     window.userUPI = DEFAULT_UPI_ID;
     const qrText = `upi://pay?pa=${DEFAULT_UPI_ID}&pn=${encodeURIComponent(DEFAULT_UPI_NAME)}&cu=INR`;
 
-    // Try qrcodejs first (inline, no network needed)
-    if (typeof QRCode !== 'undefined') {
-        new QRCode(div, {
-            text: qrText,
-            width: 96,
-            height: 96,
-            colorDark: "#000000",
-            colorLight: "#ffffff",
-            correctLevel: QRCode.CorrectLevel.M
-        });
-    } else {
-        // Fallback: external API
-        const img = document.createElement('img');
-        img.src = `https://api.qrserver.com/v1/create-qr-code/?size=96x96&margin=6&data=${encodeURIComponent(qrText)}`;
-        img.alt = "UPI payment QR";
-        img.width = 96;
-        img.height = 96;
-        img.crossOrigin = "anonymous";
-        div.appendChild(img);
-    }
+    const canvas = document.createElement('canvas');
+    div.appendChild(canvas);
+
+    // QRCode.toCanvas is from the qrcode npm package (jsdelivr build)
+    QRCode.toCanvas(canvas, qrText, {
+        width: 96,
+        margin: 1,
+        color: { dark: '#000000', light: '#ffffff' }
+    }, function (err) {
+        if (err) {
+            // Fallback: external API image
+            div.innerHTML = '';
+            const img = document.createElement('img');
+            img.src = `https://api.qrserver.com/v1/create-qr-code/?size=96x96&margin=6&data=${encodeURIComponent(qrText)}`;
+            img.width = 96;
+            img.height = 96;
+            div.appendChild(img);
+        }
+    });
 }
 
 async function fetchCRM() {
-    const res = await fetch(`${API_URL}/invoices`);
-    const data = await res.json();
-    const map = new Map();
-    data.forEach(i => map.set(i.client.name, i.client));
-    window.clientData = map;
-    document.getElementById('client-selector').innerHTML = '<option value="">-- Select Client --</option>' + Array.from(map.keys()).map(k => `<option value="${k}">${k}</option>`).join('');
-    document.getElementById('crm-body').innerHTML = Array.from(map.values()).map(c => `<tr><td><strong>${c.name}</strong></td><td>${c.gstin}</td><td>Active</td></tr>`).join('');
+    try {
+        const res = await fetch(`${API_URL}/invoices`);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+        const map = new Map();
+        data.forEach(i => map.set(i.client.name, i.client));
+        window.clientData = map;
+        document.getElementById('client-selector').innerHTML =
+            '<option value="">-- Quick Select Client --</option>' +
+            Array.from(map.keys()).map(k => `<option value="${k}">${k}</option>`).join('');
+        document.getElementById('crm-body').innerHTML = map.size
+            ? Array.from(map.values()).map(c => `<tr><td><strong>${c.name}</strong></td><td>${c.gstin || '-'}</td><td>Active</td></tr>`).join('')
+            : '<tr><td colspan="3" class="empty-state">No clients yet</td></tr>';
+    } catch (e) {
+        console.error('fetchCRM error:', e);
+        document.getElementById('crm-body').innerHTML = `<tr><td colspan="3" class="empty-state">⚠️ Could not load clients: ${e.message}</td></tr>`;
+    }
 }
 
 function fillClientDetails() {
@@ -342,12 +361,17 @@ function fillClientDetails() {
 }
 
 async function fetchStats() {
-    const res = await fetch(`${API_URL}/stats`);
-    const s = await res.json();
-    document.getElementById('stat-sales').innerText = "₹ " + s.totalRevenue.toLocaleString();
-    document.getElementById('stat-pending').innerText = "₹ " + s.pending.toLocaleString();
-    document.getElementById('stat-count').innerText = s.count;
-    updateChart(s.monthlyData);
+    try {
+        const res = await fetch(`${API_URL}/stats`);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const s = await res.json();
+        document.getElementById('stat-sales').innerText = "₹ " + (s.totalRevenue || 0).toLocaleString();
+        document.getElementById('stat-pending').innerText = "₹ " + (s.pending || 0).toLocaleString();
+        document.getElementById('stat-count').innerText = s.count || 0;
+        if (s.monthlyData) updateChart(s.monthlyData);
+    } catch (e) {
+        console.error('fetchStats error:', e);
+    }
 }
 
 function updateChart(monthlyData) {
