@@ -14,7 +14,7 @@ app.use(express.json({ limit: '50mb' }));
 
 require('dotenv').config();
 
-mongoose.connect(process.env.MONGODB_URI || 'mongodb+srv://netrutvainternational_db_user:<db_password>@cluster0.inhngel.mongodb.net/?appName=Cluster0')
+mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/quickbill')
     .then(() => console.log("✅ Connected to MongoDB"))
     .catch(err => console.error("❌ Connection Error:", err));
 

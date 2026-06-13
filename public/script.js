@@ -1,4 +1,4 @@
-const API_URL = "http://localhost:5000/api";
+const API_URL = "https://invoice-bill-k9dn.onrender.com/api";
 const DEFAULT_UPI_ID = "vyapar.175692826517@hdfcbank";
 const DEFAULT_UPI_NAME = "Vyapar";
 let myChart = null;
